@@ -1,32 +1,39 @@
 # Objective
 
-The purpose of this script is to reduce the setup time for a 'plain vanilla´ web application with all the standard bits and pieces already in place.
+The purpose of this script is to reduce the setup time for a 'plain vanilla´ application, be it a web application or just a local python app - with all the standard bits and pieces already in place.
 
 When you find yourself repeatedly adding more things manually, please update the script to save time in the future.
 
 # Usage
 
 ```
-make setup NAME=mynewproject
+make setup_local NAME=mynewproject
+```
+or
+```
+make setup_webapp NAME=mynewproject
 ```
 
 or if you do not have the makefile in the same directory:
 ```
-make -f <path_to_makefile>\Makefile setup NAME=<mynewproject>
+make -f <path_to_makefile>\Makefile setup_local NAME=<mynewproject>
+make -f <path_to_makefile>\Makefile setup_webapp NAME=<mynewproject>
 ```
 
-The directory `mynewproject` will be created under the current directory and the structure to create both frontend (JS/Vue/Vuex/router) and backend (Python/CDK/FastAPI) generated.
+The directory `mynewproject` will be created under the current directory. For `setup_local` a python venv will be set up. `setup_webapp` adds structure to create both frontend (JS/Vue/Vuex/router) and backend (Python/CDK/FastAPI) generated.
 
 Additionally a git repository will be initiated, but no commits made.
 
 # Requirements
-You will need to have (at least) the following components installed:
-* [Node](https://nodejs.org/en/download/)
+You will need to have (at least) the following components installed for `setup_local`:
 * [Python](https://www.python.org/downloads/release/python-399/) (3.10 is bnot yet supported in Lambda runtime)
-* CDK (`npm install -g aws-cdk`)
-* Vue CLI (`npm install -g @vue/cli`)
 * [git](https://git-scm.com/downloads)
 * make
+
+For `setup_webapp` you also need the following:
+* [Node](https://nodejs.org/en/download/)
+* CDK (`npm install -g aws-cdk`)
+* Vue CLI (`npm install -g @vue/cli`)
 
 ## make
 `make` is available on most linux systems set up for development, but
