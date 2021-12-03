@@ -10,6 +10,11 @@ When you find yourself repeatedly adding more things manually, please update the
 make setup NAME=mynewproject
 ```
 
+or if you do not have the makefile in the same directory:
+```
+make -f <path_to_makefile>\Makefile setup NAME=<mynewproject>
+```
+
 The directory `mynewproject` will be created under the current directory and the structure to create both frontend (JS/Vue/Vuex/router) and backend (Python/CDK/FastAPI) generated.
 
 Additionally a git repository will be initiated, but no commits made.
