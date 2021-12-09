@@ -9,12 +9,15 @@ When you find yourself repeatedly adding more things manually, please update the
 ```
 make setup_local NAME=mynewproject
 ```
+
 or
+
 ```
 make setup_webapp NAME=mynewproject
 ```
 
 or if you do not have the makefile in the same directory:
+
 ```
 make -f <path_to_makefile>\Makefile setup_local NAME=<mynewproject>
 make -f <path_to_makefile>\Makefile setup_webapp NAME=<mynewproject>
@@ -26,11 +29,19 @@ Additionally a git repository will be initiated, but no commits made.
 
 # Requirements
 You will need to have (at least) the following components installed for `setup_local`:
+
 * [Python](https://www.python.org/downloads/release/python-399/) (3.10 is bnot yet supported in Lambda runtime)
 * [git](https://git-scm.com/downloads)
 * make
 
+Also make sure to install the requirements.
+
+```
+pip install -r requirements.txt
+```
+
 For `setup_webapp` you also need the following:
+
 * [Node](https://nodejs.org/en/download/)
 * CDK (`npm install -g aws-cdk`)
 * Vue CLI (`npm install -g @vue/cli`)

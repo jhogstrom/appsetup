@@ -8,11 +8,6 @@
 	%/.gitignore \
 	%/backend/app.py
 
-# Ensure the NAME parameter is set.
-ifeq ($(NAME),)
-$(error Pass NAME=<appname> on command line)
-endif
-
 match=$*
 log=echo "** Making $@..."
 
@@ -35,6 +30,7 @@ setup_local: coredirs=$(NAME)/backend $(NAME)/.git
 setup_local: backend_prereqs=$(NAME)/requirements.txt
 setup_local: MODE=local
 
+vpath %.md $(dir $(MKFILE))
 
 %/.gitignore:
 	$(log)
@@ -108,6 +104,10 @@ setup: dir_$(NAME)
 
 
 setup_webapp setup_local:
+# Ensure the NAME parameter is set.
+ifeq ($(NAME),)
+	$(error Pass NAME=<appname> on command line)
+endif
 	$(MAKE) -f $(MKFILE) \
 		setup NAME=$(NAME) MODE=$(MODE)\
 		"coredirs=$(coredirs)" "backend_prereqs=$(backend_prereqs)"
@@ -116,4 +116,10 @@ setup_webapp setup_local:
 tester:
 	$(log)
 	touch foobar
+
+%.html: %.md
+	python $(dir $(MKFILE))mkhtml.py --input $< --output $@
+
+help: $(dir $(MKFILE))README.html
+	cmd /c $(subst /,\\,$<)
 
