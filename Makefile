@@ -3,10 +3,11 @@
 .PRECIOUS: \
 	%/.env \
 	%/.git \
-	%/frontend %/backend \
+	%/frontend %/backend %/src \
 	%/requirements.txt %/backend/requirements.txt %/backend/api/requirements.txt \
 	%/.gitignore \
-	%/backend/app.py
+	%/backend/app.py \
+	%/README.md
 
 match=$*
 log=echo "** Making $@..."
@@ -15,7 +16,7 @@ log=echo "** Making $@..."
 mymakefile=$(word $(words $(1)), $(1))
 MKFILE=$(call mymakefile, $(MAKEFILE_LIST))
 
-# Do target-specific parametrization.
+# Target-specific parametrization.
 # These variables will be sent to a submake (cannot use target specific variables as prereqs).
 # If we need more setup-types, more (and different) parametrization may have to be made.
 # The MODE variable is used for conditionals in the submake.
@@ -23,11 +24,12 @@ setup_webapp: coredirs=$(NAME)/frontend $(NAME)/backend $(NAME)/.git
 setup_webapp: backend_prereqs=$(NAME)/backend/app.py \
 	$(NAME)/backend/api/requirements.txt \
 	$(NAME)/backend/requirements.txt \
-	$(NAME)/requirements.txt
+	$(NAME)/requirements.txt \
+	$(NAME)/README.md
 setup_webapp: MODE=webapp
 
-setup_local: coredirs=$(NAME)/backend $(NAME)/.git
-setup_local: backend_prereqs=$(NAME)/requirements.txt
+setup_local: coredirs=$(NAME)/src $(NAME)/.git
+setup_local: backend_prereqs=$(NAME)/requirements.txt $(NAME)/README.md
 setup_local: MODE=local
 
 vpath %.md $(dir $(MKFILE))
@@ -51,10 +53,14 @@ vpath %.md $(dir $(MKFILE))
 	echo -r api/requirements.txt >> $@
 	echo git+https://github.com/aditrologistics/awscdk.git >> $@
 
+%/README.md:
+	echo "Please find time to add information here" > $@
+
 %/requirements.txt:
 	$(log)
 	echo rope > $@
 	echo flake8 >> $@
+	echo python-dotenv >> $@
 ifeq ($(MODE),webapp)
 	echo -r backend/requirements.txt >> $@
 endif
@@ -62,7 +68,9 @@ endif
 %/backend/app.py:
 	$(log)
 	mkdir -p $(dir $@)
-	cd $(dir $@) && cdk init app --language python --generate-only
+	cd $(dir $@) && \
+	cdk init app --language python --generate-only
+	sed -i -r 's/BackendStack(.,)/$(NAME)Stack\\1/g' $@
 
 %/.env:
 	$(log)
@@ -96,8 +104,6 @@ makedir_%:
 	mkdir $(match)
 
 dir_%: makedir_% $(coredirs)
-	echo coredirs $(coredirs)
-	echo targets $^
 
 setup: dir_$(NAME)
 	echo Setup of $(subst dir_,,$<) completed.
