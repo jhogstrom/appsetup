@@ -7,40 +7,52 @@
 	%/requirements.txt %/backend/requirements.txt %/backend/api/requirements.txt \
 	%/.gitignore \
 	%/backend/app.py \
-	%/README.md
+	%/README.md \
+	%/.flake8
 
-match=$*
-log=echo "** Making $@..."
 
 # This is a way to bypass a bug in $(lastword...)
 mymakefile=$(word $(words $(1)), $(1))
 MKFILE=$(call mymakefile, $(MAKEFILE_LIST))
+ROOTDIR=$(dir $(MKFILE))
+MKDIR=mkdir -p $(dir $@)
+match=$*
+log=echo "** Making $@..."
 
 # Target-specific parametrization.
 # These variables will be sent to a submake (cannot use target specific variables as prereqs).
 # If we need more setup-types, more (and different) parametrization may have to be made.
 # The MODE variable is used for conditionals in the submake.
+setup_webapp: MODE=webapp
 setup_webapp: coredirs=$(NAME)/frontend $(NAME)/backend $(NAME)/.git
 setup_webapp: backend_prereqs=$(NAME)/backend/app.py \
 	$(NAME)/backend/api/requirements.txt \
 	$(NAME)/backend/requirements.txt \
+	$(NAME)/backend/.flake8 \
 	$(NAME)/requirements.txt \
 	$(NAME)/README.md
-setup_webapp: MODE=webapp
 
-setup_local: coredirs=$(NAME)/src $(NAME)/.git
-setup_local: backend_prereqs=$(NAME)/requirements.txt $(NAME)/README.md
 setup_local: MODE=local
+setup_local: coredirs=$(NAME)/src $(NAME)/.git
+setup_local: backend_prereqs=$(NAME)/requirements.txt \
+	$(NAME)/.flake8 \
+	$(NAME)/README.md
 
-vpath %.md $(dir $(MKFILE))
+vpath %.md $(ROOTDIR)
+vpath %.flake8.template $(ROOTDIR)/templates
+vpath %.gitignore.template $(ROOTDIR)/templates
 
-%/.gitignore:
+%/.flake8: .flake8.template
 	$(log)
-	echo foo > $@
+	cp $< $@
+
+%/.gitignore: .gitignore.template
+	$(log)
+	cp $< $@
 
 %/backend/api/requirements.txt:
 	$(log)
-	mkdir -p $(dir $@)
+	$(MKDIR)
 	echo fastapi > $@
 	echo pydantic >> $@
 	echo mangum >> $@
@@ -48,7 +60,7 @@ vpath %.md $(dir $(MKFILE))
 
 %/backend/requirements.txt:
 	$(log)
-	mkdir -p $(dir $@)
+	$(MKDIR)
 	touch $@
 	echo -r api/requirements.txt >> $@
 	echo git+https://github.com/aditrologistics/awscdk.git >> $@
@@ -67,14 +79,14 @@ endif
 
 %/backend/app.py:
 	$(log)
-	mkdir -p $(dir $@)
+	$(MKDIR)
 	cd $(dir $@) && \
 	cdk init app --language python --generate-only
 	sed -i -r 's/BackendStack(.,)/$(NAME)Stack\\1/g' $@
 
 %/.env:
 	$(log)
-	mkdir -p $(dir $@)
+	$(MKDIR)
 	cd $(match) && python -m venv .env
 
 %/backend: $(backend_prereqs) %/.env %/.gitignore
@@ -123,9 +135,10 @@ tester:
 	$(log)
 	touch foobar
 
-%.html: %.md
-	python $(dir $(MKFILE))mkhtml.py --input $< --output $@
+%/README.html: README.md
+	$(MKDIR)
+	python $(ROOTDIR)mkhtml.py --input $< --output $@
 
-help: $(dir $(MKFILE))README.html
+help: $(ROOTDIR)/output/README.html
 	cmd /c $(subst /,\\,$<)
 
