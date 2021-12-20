@@ -1,5 +1,5 @@
 .PHONY: setup %/backend/requirements.txt
-# .SILENT:
+.SILENT:
 .PRECIOUS: \
 	%/.env \
 	%/.git \
@@ -13,7 +13,8 @@
 
 # This is a way to bypass a bug in $(lastword...)
 mymakefile=$(word $(words $(1)), $(1))
-MKFILE=$(call mymakefile, $(MAKEFILE_LIST))
+# Replace windows pathsep with unix pathsep
+MKFILE=$(subst \,/,$(call mymakefile, $(MAKEFILE_LIST)))
 ROOTDIR=$(dir $(MKFILE))
 MKDIR=mkdir -p $(dir $@)
 match=$*
@@ -63,7 +64,7 @@ vpath %.gitignore.template $(ROOTDIR)/templates
 	$(MKDIR)
 	touch $@
 	echo -r api/requirements.txt >> $@
-	echo git+https://github.com/aditrologistics/awscdk.git >> $@
+# 	echo git+https://github.com/aditrologistics/awscdk.git >> $@
 
 %/README.md:
 	echo "Please find time to add information here" > $@
@@ -92,7 +93,7 @@ endif
 %/backend: $(backend_prereqs) %/.env %/.gitignore
 	$(log)
 	mkdir -p $@
-
+	echo "Upgrading PIP and installing requirements. This can take a while..."
 	cd $(match) && \
 	source .env/Scripts/activate && \
 	python.exe -m pip install --upgrade pip && \
@@ -115,11 +116,25 @@ makedir_%:
 	echo coredirs $(coredirs)
 	mkdir $(match)
 
-dir_%: makedir_% $(coredirs)
+%/README.html: README.md
+	$(MKDIR)
+	python $(ROOTDIR)mkhtml.py --input $< --output $@
 
-setup: dir_$(NAME)
+help: $(ROOTDIR)/output/README.html
+	cmd /c $(subst /,\\,$<)
+
+
+tester:
+	$(log)
+	touch foobar
+
+
+setup: makedir_$(NAME) $(coredirs)
+# Ensure the NAME parameter is set.
+ifeq ($(NAME),)
+	$(error Pass NAME=<appname> on command line)
+endif
 	echo Setup of $(subst dir_,,$<) completed.
-
 
 setup_webapp setup_local:
 # Ensure the NAME parameter is set.
@@ -127,18 +142,9 @@ ifeq ($(NAME),)
 	$(error Pass NAME=<appname> on command line)
 endif
 	$(MAKE) -f $(MKFILE) \
-		setup NAME=$(NAME) MODE=$(MODE)\
-		"coredirs=$(coredirs)" "backend_prereqs=$(backend_prereqs)"
+		setup NAME=$(NAME) MODE=$(MODE) \
+		coredirs="$(coredirs)" backend_prereqs="$(backend_prereqs)"
 
 
-tester:
-	$(log)
-	touch foobar
 
-%/README.html: README.md
-	$(MKDIR)
-	python $(ROOTDIR)mkhtml.py --input $< --output $@
-
-help: $(ROOTDIR)/output/README.html
-	cmd /c $(subst /,\\,$<)
 
