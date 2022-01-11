@@ -54,7 +54,8 @@ vpath %.gitignore.template $(ROOTDIR)/templates
 %/backend/api/requirements.txt:
 	$(log)
 	$(MKDIR)
-	echo fastapi > $@
+	touch $@
+	echo fastapi >> $@
 	echo pydantic >> $@
 	echo mangum >> $@
 	echo python-dotenv >> $@
@@ -63,7 +64,7 @@ vpath %.gitignore.template $(ROOTDIR)/templates
 	$(log)
 	$(MKDIR)
 	touch $@
-	echo -r api/requirements.txt >> $@
+	echo "-r api/requirements.txt" >> $@
 # 	echo git+https://github.com/aditrologistics/awscdk.git >> $@
 
 %/README.md:
@@ -71,11 +72,12 @@ vpath %.gitignore.template $(ROOTDIR)/templates
 
 %/requirements.txt:
 	$(log)
-	echo rope > $@
+	touch $@
+	echo rope >> $@
 	echo flake8 >> $@
 	echo python-dotenv >> $@
 ifeq ($(MODE),webapp)
-	echo -r backend/requirements.txt >> $@
+	echo "-r backend/requirements.txt" >> $@
 endif
 
 %/backend/app.py:
