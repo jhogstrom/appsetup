@@ -1,9 +1,11 @@
 .PHONY: setup %/backend/requirements.txt
-.SILENT:
+# .SILENT:
 .PRECIOUS: \
 	%/.env \
 	%/.git \
 	%/frontend %/backend %/src \
+	%/.browserlistrc \
+	%/activate.bat \
 	%/requirements.txt %/backend/requirements.txt %/backend/api/requirements.txt \
 	%/.gitignore \
 	%/backend/app.py \
@@ -15,10 +17,11 @@
 mymakefile=$(word $(words $(1)), $(1))
 # Replace windows pathsep with unix pathsep
 MKFILE=$(subst \,/,$(call mymakefile, $(MAKEFILE_LIST)))
-ROOTDIR=$(dir $(MKFILE))
+ROOTDIR:=$(dir $(MKFILE))
 MKDIR=mkdir -p $(dir $@)
 match=$*
 log=echo "** Making $@..."
+dosdir=$(subst /,\\\\\\\\,$(subst /d/,d:/,$(subst /c/,c:/,$(1))))
 
 # Target-specific parametrization.
 # These variables will be sent to a submake (cannot use target specific variables as prereqs).
@@ -30,6 +33,7 @@ setup_webapp: backend_prereqs=$(NAME)/backend/app.py \
 	$(NAME)/backend/api/requirements.txt \
 	$(NAME)/backend/requirements.txt \
 	$(NAME)/backend/.flake8 \
+	$(NAME)/frontend/.browserlistrc \
 	$(NAME)/requirements.txt \
 	$(NAME)/README.md
 
@@ -42,6 +46,8 @@ setup_local: backend_prereqs=$(NAME)/requirements.txt \
 vpath %.md $(ROOTDIR)
 vpath %.flake8.template $(ROOTDIR)/templates
 vpath %.gitignore.template $(ROOTDIR)/templates
+vpath %.browserlistrc.template $(ROOTDIR)/templates
+vpath %activate.bat.template $(ROOTDIR)/templates
 
 %/.flake8: .flake8.template
 	$(log)
@@ -50,6 +56,14 @@ vpath %.gitignore.template $(ROOTDIR)/templates
 %/.gitignore: .gitignore.template
 	$(log)
 	cp $< $@
+
+%/.browserlistrc: .browserlistrc.template
+	$(log)
+	cp $< $@
+
+%/activate.bat: activate.bat.template
+	$(log)
+	sed s#$$\(DIR\)#$(call dosdir,$(shell pwd))\\\\\\\\$(NAME)#g $< > $@
 
 %/backend/api/requirements.txt:
 	$(log)
@@ -92,12 +106,12 @@ endif
 	$(MKDIR)
 	cd $(match) && python -m venv .env
 
-%/backend: $(backend_prereqs) %/.env %/.gitignore
+%/backend: $(backend_prereqs) %/.env %/.gitignore %/.env/bin/activate.bat
 	$(log)
 	mkdir -p $@
 	echo "Upgrading PIP and installing requirements. This can take a while..."
 	cd $(match) && \
-	source .env/Scripts/activate && \
+	source .env/bin/activate && \
 	python.exe -m pip install --upgrade pip && \
 	pip install -r requirements.txt && pip freeze
 
@@ -105,10 +119,10 @@ endif
 %/frontend:
 	$(log)
 	mkdir -p $@
-	cd $(match) && vue create --no-git --merge --skipGetStarted frontend
-	cd $@ && vue add vuex
-	cd $@ && vue add vuetify
-	cd $@ && vue add router
+	cd $(match) && vue create --no-git --merge --skipGetStarted --preset ../$(ROOTDIR)/templates/vuedefaults.json frontend
+	# cd $@ && vue add vuex
+	# cd $@ && vue add vuetify
+	# cd $@ && vue add router
 
 %/.git:
 	$(log)
@@ -136,7 +150,7 @@ setup: makedir_$(NAME) $(coredirs)
 ifeq ($(NAME),)
 	$(error Pass NAME=<appname> on command line)
 endif
-	echo Setup of $(subst dir_,,$<) completed.
+	echo Setup of $(subst makedir_,,$<) completed.
 
 setup_webapp setup_local:
 # Ensure the NAME parameter is set.

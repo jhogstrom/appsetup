@@ -1,0 +1,33 @@
+{
+  "useConfigFiles": true,
+  "cssPreprocessor": "dart-sass",
+  "plugins": {
+    "@vue/cli-plugin-babel": {
+      "version": "~4.5.0"
+    },
+    "@vue/cli-plugin-eslint": {
+      "version": "~4.5.0",
+      "lintOn": [
+        "save"
+      ]
+    },
+    "@vue/cli-plugin-router": {
+      "version": "~4.5.0"
+    },
+    "@vue/cli-plugin-vuex": {
+      "version": "~4.5.0"
+    },
+    "vue-cli-plugin-vuetify": {
+      "version": "~2.4.3",
+      "preset": "configure",
+      "replaceComponents": false,
+      "useTheme": false,
+      "useCustomProperties": false,
+      "iconFont": "mdi",
+      "installFonts": false,
+      "useAlaCarte": true,
+      "usePolyfill": true,
+      "locale": "sv"
+    }
+  }
+}
