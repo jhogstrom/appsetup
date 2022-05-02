@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+import os
+import aws_cdk as cdk
+from backend.backend_stack import BackendStack
+
+
+app = cdk.App()
+stage = app.node.try_get_context("STAGE") or "DEV"
+user = app.node.try_get_context("user") or os.getenv("USERNAME") or "UNKNOWN"
+account = app.node.try_get_context("account") or os.getenv("AWSACCOUNT")
+stack_name = app.node.try_get_context("WORKLOAD") or os.getenv("STACKNAME")
+region = app.node.try_get_context("REGION") or os.getenv("AWSREGION")
+
+print("The following parameters have been set:")
+print(f"* {stage=}")
+print(f"* {user=}")
+print(f"* {account=}")
+print(f"* {stack_name=}")
+print(f"* {region=}")
+
+
+env = cdk.Environment(account=account, region=region)
+BackendStack(
+    app,
+    stack_name,
+    stage=stage,
+    user=user,
+    # env=env
+)
+
+app.synth()

@@ -7,14 +7,22 @@ When you find yourself repeatedly adding more things manually, please update the
 # Usage
 
 ```
+make setup_webapp NAME=mynewproject
+```
+_To create a full stack application (JS/Vue + CDK/Python)_
+
+```
+make setup_backend NAME=mynewproject
+```
+_To create a backend application (CDK/Python)_
+
+```
 make setup_local NAME=mynewproject
 ```
+_To create a local python application (venv)_
 
 or
 
-```
-make setup_webapp NAME=mynewproject
-```
 
 or if you do not have the makefile in the same directory:
 

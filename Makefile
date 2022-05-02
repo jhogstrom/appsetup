@@ -1,8 +1,9 @@
 .PHONY: setup %/backend/requirements.txt
 # .SILENT:
 .PRECIOUS: \
-	%/.env \
+	%/.venv \
 	%/.git \
+	%/makefiles \
 	%/frontend %/backend %/src \
 	%/.browserlistrc \
 	%/activate.bat \
@@ -18,22 +19,33 @@ mymakefile=$(word $(words $(1)), $(1))
 # Replace windows pathsep with unix pathsep
 MKFILE=$(subst \,/,$(call mymakefile, $(MAKEFILE_LIST)))
 ROOTDIR:=$(dir $(MKFILE))
-MKDIR=mkdir -p $(dir $@)
+MKDIR=@mkdir -p $(dir $@)
 match=$*
-log=echo "** Making $@..."
+ECHO=@echo
+log=$(ECHO) -e "\n** Making $@...\n"
 dosdir=$(subst /,\\\\\\\\,$(subst /d/,d:/,$(subst /c/,c:/,$(1))))
+CP=@cp
 
 # Target-specific parametrization.
 # These variables will be sent to a submake (cannot use target specific variables as prereqs).
 # If we need more setup-types, more (and different) parametrization may have to be made.
 # The MODE variable is used for conditionals in the submake.
 setup_webapp: MODE=webapp
-setup_webapp: coredirs=$(NAME)/frontend $(NAME)/backend $(NAME)/.git
+setup_webapp: coredirs=$(NAME)/frontend $(NAME)/backend $(NAME)/.git $(NAME)/makefiles
 setup_webapp: backend_prereqs=$(NAME)/backend/app.py \
 	$(NAME)/backend/api/requirements.txt \
 	$(NAME)/backend/requirements.txt \
 	$(NAME)/backend/.flake8 \
 	$(NAME)/frontend/.browserlistrc \
+	$(NAME)/requirements.txt \
+	$(NAME)/README.md
+
+setup_backend: MODE=webapp
+setup_backend: coredirs=$(NAME)/backend $(NAME)/.git $(NAME)/makefiles
+setup_backend: backend_prereqs=$(NAME)/backend/app.py \
+	$(NAME)/backend/api/requirements.txt \
+	$(NAME)/backend/requirements.txt \
+	$(NAME)/backend/.flake8 \
 	$(NAME)/requirements.txt \
 	$(NAME)/README.md
 
@@ -48,88 +60,117 @@ vpath %.flake8.template $(ROOTDIR)/templates
 vpath %.gitignore.template $(ROOTDIR)/templates
 vpath %.browserlistrc.template $(ROOTDIR)/templates
 vpath %activate.bat.template $(ROOTDIR)/templates
+vpath %app.py.template $(ROOTDIR)/templates
 
 %/.flake8: .flake8.template
 	$(log)
-	cp $< $@
+	$(CP) $< $@
 
 %/.gitignore: .gitignore.template
 	$(log)
-	cp $< $@
+	$(CP) $< $@
 
 %/.browserlistrc: .browserlistrc.template
 	$(log)
-	cp $< $@
+	$(CP) $< $@
 
 %/activate.bat: activate.bat.template
 	$(log)
-	sed s#$$\(DIR\)#$(call dosdir,$(shell pwd))\\\\\\\\$(NAME)#g $< > $@
+	@sed s#$$\(DIR\)#$(call dosdir,$(shell pwd))\\\\\\\\$(NAME)#g $< > $@
 
 %/backend/api/requirements.txt:
 	$(log)
 	$(MKDIR)
-	touch $@
-	echo fastapi >> $@
-	echo pydantic >> $@
-	echo mangum >> $@
-	echo python-dotenv >> $@
+	@touch $@
+	$(ECHO) fastapi >> $@
+	$(ECHO) pydantic >> $@
+	$(ECHO) mangum >> $@
+	$(ECHO) python-dotenv >> $@
 
 %/backend/requirements.txt:
 	$(log)
 	$(MKDIR)
-	touch $@
-	echo "-r api/requirements.txt" >> $@
-# 	echo git+https://github.com/aditrologistics/awscdk.git >> $@
+	@touch $@
+	$(ECHO) "-r api/requirements.txt" >> $@
+# 	$(ECHO) git+https://github.com/aditrologistics/awscdk.git >> $@
 
 %/README.md:
-	echo "Please find time to add information here" > $@
+	$(ECHO) "Please find time to add information here" > $@
 
 %/requirements.txt:
 	$(log)
-	touch $@
-	echo rope >> $@
-	echo flake8 >> $@
-	echo python-dotenv >> $@
+	@touch $@
+	$(ECHO) rope >> $@
+	$(ECHO) flake8 >> $@
+	$(ECHO) python-dotenv >> $@
 ifeq ($(MODE),webapp)
-	echo "-r backend/requirements.txt" >> $@
+	$(ECHO) "-r backend/requirements.txt" >> $@
 endif
 
-%/backend/app.py:
+# This looks very much like a file, but the directory
+# part is only there to help the recipe.
+%/init_cdk:
 	$(log)
 	$(MKDIR)
-	cd $(dir $@) && \
-	cdk init app --language python --generate-only
-	sed -i -r 's/BackendStack(.,)/$(NAME)Stack\\1/g' $@
+	cd $(dir $@) \
+		&& cdk init app --language python --generate-only
 
-%/.env:
+%/backend/app.py: app.py.template %/backend/init_cdk
 	$(log)
 	$(MKDIR)
-	cd $(match) && python -m venv .env
+	$(CP) $< $@
+	$(CP) $(dir $<)/backend_stack.py.template $(dir $@)/backend/backend_stack.py
 
-%/backend: $(backend_prereqs) %/.env %/.gitignore %/.env/bin/activate.bat
+%/.venv:
 	$(log)
-	mkdir -p $@
-	echo "Upgrading PIP and installing requirements. This can take a while..."
-	cd $(match) && \
-	source .env/bin/activate && \
-	python.exe -m pip install --upgrade pip && \
-	pip install -r requirements.txt && pip freeze
+	$(MKDIR)
+	cd $(match) \
+		&& python -m venv $(notdir $@)
+
+%/backend: $(backend_prereqs) %/.venv %/.gitignore %/.venv/bin/activate.bat
+	$(log)
+	@mkdir -p $@
+	$(ECHO) "Upgrading PIP and installing requirements. This can take a while..."
+	cd $(match) \
+		&& source .venv/bin/activate \
+		&& python.exe -m pip install --upgrade pip \
+		&& pip install -r requirements.txt && pip freeze
 
 
 %/frontend:
 	$(log)
-	mkdir -p $@
-	cd $(match) && vue create --no-git --merge --skipGetStarted --preset ../$(ROOTDIR)/templates/vuedefaults.json frontend
-	# cd $@ && vue add vuex
-	# cd $@ && vue add vuetify
-	# cd $@ && vue add router
+	@mkdir -p $@
+	$(ECHO) "Installing vue + components. This can take a while..."
+	@cd $(match) \
+		&& vue create \
+			--no-git \
+			--merge \
+			--skipGetStarted \
+			--preset ../$(ROOTDIR)/templates/vuedefaults.json \
+			frontend
 
 %/.git:
 	$(log)
-	cd $(match) && git init .
+	cd $(match) \
+		&& git init . \
+		&& git submodule add https://github.com/aditrologistics/makefiles.git makefiles \
+		&& git submodule init \
+
+%/makefiles: %/.git
+	$(log)
+	cd $(match) \
+		&& echo @include makefiles/Makefile > Makefile \
+		&& echo -e \
+			"WORKLOAD_NAME=$(NAME)\n" \
+			"AWS_ACCOUNT_DEV=XXX\n" \
+			"AWS_ACCOUNT_PROD=XXX\n" \
+			"AWS_ACCOUNT_TEST=XXX\n" \
+			"\n" \
+			"AWS_REGION=eu-north-1\n" \
+			"SSO_ROLE=ALAB-Admin" > makevars.mak
 
 makedir_%:
-	echo coredirs $(coredirs)
+	$(ECHO) coredirs $(coredirs)
 	mkdir $(match)
 
 %/README.html: README.md
@@ -144,15 +185,22 @@ tester:
 	$(log)
 	touch foobar
 
+%/first_commit:
+	$(log)
+	cd $(match) \
+		&& git add . \
+		&& git commit -m "Initialized" \
+		&& git remote add origin https://github.com/aditrologistics/$(match)
 
-setup: makedir_$(NAME) $(coredirs)
+
+setup: makedir_$(NAME) $(coredirs) $(NAME)/first_commit
 # Ensure the NAME parameter is set.
 ifeq ($(NAME),)
 	$(error Pass NAME=<appname> on command line)
 endif
-	echo Setup of $(subst makedir_,,$<) completed.
+	$(ECHO) Setup of $(NAME) completed.
 
-setup_webapp setup_local:
+setup_webapp setup_local setup_backend:
 # Ensure the NAME parameter is set.
 ifeq ($(NAME),)
 	$(error Pass NAME=<appname> on command line)
@@ -160,7 +208,3 @@ endif
 	$(MAKE) -f $(MKFILE) \
 		setup NAME=$(NAME) MODE=$(MODE) \
 		coredirs="$(coredirs)" backend_prereqs="$(backend_prereqs)"
-
-
-
-

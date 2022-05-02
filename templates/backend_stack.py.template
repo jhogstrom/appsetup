@@ -1,0 +1,49 @@
+import aws_cdk as cdk
+from constructs import Construct
+import alabcdk
+
+from aws_cdk import (
+    aws_lambda,
+    aws_iam,
+    custom_resources,
+    aws_apigateway,
+    aws_logs,
+    aws_s3_notifications,
+    aws_cloudfront,
+    aws_cloudfront_origins,
+)
+
+
+class BackendStack(alabcdk.AlabStack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # The code that defines your stack goes here
+        # ...
+
+
+        # Uncomment this to get a website and an API
+        # behind cloudfront
+        # website = alabcdk.Website(
+        #     self,
+        #     "cdn",
+        #     domain_name=self.domain_name,
+        #     hosted_zone_id=self.hosted_zone)
+        # behaviour_specs = dict(
+        #     viewer_protocol_policy=aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        #     cache_policy=aws_cloudfront.CachePolicy(
+        #         self,
+        #         alabcdk.gen_name(self, "APICachePolicy"),
+        #         default_ttl=cdk.Duration.seconds(300),
+        #         header_behavior=aws_cloudfront.CacheHeaderBehavior.allow_list("Authorization", "x-api-key"),
+        #         query_string_behavior=aws_cloudfront.CacheQueryStringBehavior.all(),
+        #     ),
+        # )
+        # website.distribution.add_behavior(
+        #     "/api",
+        #     aws_cloudfront_origins.HttpOrigin(
+        #         domain_name=f"{APIGATEWAY_CONSTRUCT.rest_api_id}.execute-api.{self.region}.amazonaws.com",
+        #         origin_path="/prod/v1"
+        #     ),
+        #     **behaviour_specs)
