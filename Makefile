@@ -190,7 +190,7 @@ tester:
 	cd $(match) \
 		&& git add . \
 		&& git commit -m "Initialized" \
-		&& git remote add origin https://github.com/aditrologistics/$(match)
+		&& git remote add origin https://github.com/aditrologistics/$(match).git
 
 
 setup: makedir_$(NAME) $(coredirs) $(NAME)/first_commit
