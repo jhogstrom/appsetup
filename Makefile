@@ -17,7 +17,7 @@
 # This is a way to bypass a bug in $(lastword...)
 mymakefile=$(word $(words $(1)), $(1))
 # Replace windows pathsep with unix pathsep
-MKFILE=$(subst \,/,$(call mymakefile, $(MAKEFILE_LIST)))
+MKFILE:=$(subst \,/,$(call mymakefile, $(MAKEFILE_LIST)))
 ROOTDIR:=$(dir $(MKFILE))
 MKDIR=@mkdir -p $(dir $@)
 match=$*
@@ -25,6 +25,7 @@ ECHO=@echo
 log=$(ECHO) -e "\n** Making $@...\n"
 dosdir=$(subst /,\\\\\\\\,$(subst /d/,d:/,$(subst /c/,c:/,$(1))))
 CP=@cp
+include $(ROOTDIR)/../makevars.mak
 
 # Target-specific parametrization.
 # These variables will be sent to a submake (cannot use target specific variables as prereqs).
@@ -183,14 +184,53 @@ help: $(ROOTDIR)/output/README.html
 
 tester:
 	$(log)
-	touch foobar
+	curl -i -u jhogstrom:$(githubtoken) https://api.github.com/users/jhogstrom
 
-%/first_commit:
+
+GITHUB_HEADERS=-H "Accept: application/vnd.github.v3+json"
+GITHUB_AUTH=-u $(github_username):$(github_pat)
+GITHUB_ORG_URL=https://api.github.com/orgs/$(github_org)
+GITHUBAPI=curl \
+	$(GITHUB_HEADERS) \
+	$(GITHUB_AUTH)
+
+GITHUB_PRIVATE_REPO?=true
+GITHUB_HAS_ISSUES?=false
+GITHUB_HAS_PROJECTS?=false
+GITHUB_HAS_WIKI?=false
+
+create_github_repo:
+	# Create repository
+	$(GITHUBAPI) $(GITHUB_ORG_URL)/repos \
+	-X POST \
+	-d '{ \
+		"name":"$(NAME)", \
+		"description":"Code pertaining to $(NAME).", \
+		"homepage":"https://github.com/$(github_org)/$(NAME)", \
+		"private":$(GITHUB_PRIVATE_REPO), \
+		"has_issues":$(GITHUB_HAS_ISSUES), \
+		"has_projects":$(GITHUB_HAS_PROJECTS), \
+		"has_wiki":$(GITHUB_HAS_WIKI) \
+	}'
+
+	# Grant access to TEAM
+	$(GITHUBAPI) $(GITHUB_ORG_URL)/teams/$(github_team)/repos/$(github_org)/$(NAME) \
+		-X PUT \
+		-d '{ \
+			"permission": "maintain" \
+		}'
+
+GITPUSH=$(if $(github_username),git push -u origin main,echo done)
+CREATE_GITHUB_REPO:=$(if $(github_username),create_github_repo)
+
+
+%/first_commit: $(CREATE_GITHUB_REPO)
 	$(log)
 	cd $(match) \
 		&& git add . \
 		&& git commit -m "Initialized" \
-		&& git remote add origin https://github.com/aditrologistics/$(match).git
+		&& git remote add origin https://github.com/aditrologistics/$(match).git \
+		&& $(GITPUSH)
 
 
 setup: makedir_$(NAME) $(coredirs) $(NAME)/first_commit

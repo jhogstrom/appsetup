@@ -33,12 +33,28 @@ make -f <path_to_makefile>\Makefile setup_webapp NAME=<mynewproject>
 
 The directory `mynewproject` will be created under the current directory. For `setup_local` a python venv will be set up. `setup_webapp` adds structure to create both frontend (JS/Vue/Vuex/router) and backend (Python/CDK/FastAPI) generated.
 
-Additionally a git repository will be initiated, but no commits made.
+Additionally a git repository will be initiated, and a first commit made.
+
+## Creating github repo
+
+If the root directory contains `makevars.mak` that file will be included. It should contain the following variables:
+```
+github_pat=<github personal access token>
+github_username=<github user name>
+github_org=<github organization name>
+github_team=<github team>
+```
+
+To create a personal access token, please refer to the [github documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). The token needs at least `admin:org/write:org`, probably also `repo`.
+
+If `github_username` is not set the script will attempt to create a repository named `$(NAME)` for the `$(github_org)` in github and grant `maintain` access to `$(github_team)`.
+
+Finally the first commit will be pushed.
 
 # Requirements
 You will need to have (at least) the following components installed for `setup_local`:
 
-* [Python](https://www.python.org/downloads/release/python-399/) (3.10 is bnot yet supported in Lambda runtime)
+* [Python](https://www.python.org/downloads/release/python-399/) (3.10 is not yet supported in Lambda runtime)
 * [git](https://git-scm.com/downloads)
 * make
 
