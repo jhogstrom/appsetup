@@ -146,6 +146,10 @@ endif
 	$(log)
 	@mkdir -p $@
 	$(ECHO) "Installing vue + components. This can take a while..."
+# Some package complained about a too new version of node. Hence ask yarn to ignore
+# version of node engine while instaling, then restore the value.
+	yarn config get ignore-engines > /tmp/.yarn.config.get.ignore-engines
+	yarn config set ignore-engines true
 	@cd $(match) \
 		&& vue create \
 			--no-git \
@@ -153,6 +157,12 @@ endif
 			--skipGetStarted \
 			--preset ../$(ROOTDIR)/templates/vuedefaults.json \
 			frontend
+	ignoreengines=$$(</tmp/.yarn.config.get.ignore-engines); \
+	if [ "$$ignoreengines" = "undefined" ]; then \
+		yarn config delete ignore-engines; \
+	else \
+		yarn config set ignore-engines $$ignoreengines; \
+	fi
 
 %/.git:
 	$(log)
