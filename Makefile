@@ -25,7 +25,9 @@ ECHO=@echo
 log=$(ECHO) -e "\n** Making $@...\n"
 dosdir=$(subst /,\\\\\\\\,$(subst /d/,d:/,$(subst /c/,c:/,$(1))))
 CP=@cp
-include $(ROOTDIR)/../makevars.mak
+MAKEFILE_REPO_URL?=https://github.com/aditrologistics/makefiles.git
+GITHUB_ROOT_URL?=https://github.com/aditrologistics
+-include $(ROOTDIR)/../makevars.mak
 
 
 default: help
@@ -168,7 +170,7 @@ endif
 	$(log)
 	cd $(match) \
 		&& git init . \
-		&& git submodule add https://github.com/aditrologistics/makefiles.git makefiles \
+		&& git submodule add $(MAKEFILE_REPO_URL) makefiles \
 		&& git submodule init \
 
 %/makefiles: %/.git
@@ -243,7 +245,7 @@ CREATE_GITHUB_REPO:=$(if $(github_username),create_github_repo)
 	cd $(match) \
 		&& git add . \
 		&& git commit -m "Initialized" \
-		&& git remote add origin https://github.com/aditrologistics/$(match).git \
+		&& git remote add origin $(GITHUB_ROOT_URL)/$(match).git \
 		&& $(GITPUSH)
 
 
