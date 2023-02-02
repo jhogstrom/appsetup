@@ -132,12 +132,12 @@ endif
 	cd $(match) \
 		&& python -m venv $(notdir $@)
 
-%/backend: $(backend_prereqs) %/.venv %/.gitignore %/.venv/bin/activate.bat
+%/backend: $(backend_prereqs) %/.venv %/.gitignore
 	$(log)
 	@mkdir -p $@
 	$(ECHO) "Upgrading PIP and installing requirements. This can take a while..."
 	cd $(match) \
-		&& source .venv/bin/activate \
+		&& source .venv/Scripts/activate \
 		&& python.exe -m pip install --upgrade pip \
 		&& pip install -r requirements.txt && pip freeze
 
