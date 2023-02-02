@@ -27,6 +27,10 @@ dosdir=$(subst /,\\\\\\\\,$(subst /d/,d:/,$(subst /c/,c:/,$(1))))
 CP=@cp
 include $(ROOTDIR)/../makevars.mak
 
+
+default: help
+prereqs:
+	pip install -r $(ROOTDIR)/requirements.txt
 # Target-specific parametrization.
 # These variables will be sent to a submake (cannot use target specific variables as prereqs).
 # If we need more setup-types, more (and different) parametrization may have to be made.
